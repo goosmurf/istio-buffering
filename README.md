@@ -98,8 +98,9 @@ We went looking for where the data might be buffered to see what we should tune 
 
 ## Things we have tried, thoughts
 
-We tried to apply various limits in `envoyfilters-many-limits-but-doesnt-help.yaml` but this did not have any meaningful impact, unless we set the values so small that performance is universally awful. However it's possible that we missed a setting, or aren't setting things in the right way. We copied some of these settings from https://github.com/istio/istio/issues/33416
+We tried to apply various limits in `envoyfilters-many-limits-but-doesnt-help.yaml` but this did not have any meaningful impact, unless we set the values so small that performance is universally awful. However it's possible that we missed a setting, or aren't setting things in the right way. We copied some of these settings from [Envoy connection buffer limits, badly need documentation please! #33416](https://github.com/istio/istio/issues/33416).
 
-We wonder if our issue is related to https://github.com/istio/istio/issues/56312 but that issue was something lacking in detail.
+Our suspicion is that the data is being buffered in the HTTP/2 connection used by HBONE but we could not find any way to change the buffers/window sizing for the connect_originate clusters.
 
-Our suspicion is that the data is being buffered in the HTTP/2 connection used by HBONE, but we could not find any way to change the buffers/window sizing for the connect_originate clusters.
+We wonder if our issue is related to [Envoy holding a large amount of memory when requests/response have big payloads in ambient mode #56312
+](https://github.com/istio/istio/issues/56312) but that issue was lacking detail.
