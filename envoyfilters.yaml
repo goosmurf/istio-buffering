@@ -1,0 +1,33 @@
+# This filter implements the recommended settings for edge proxies here:
+#   https://www.envoyproxy.io/docs/envoy/latest/configuration/best_practices/edge
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: edge-proxy-settings
+  namespace: istio-gateway
+spec:
+  configPatches:
+  - applyTo: LISTENER
+    match:
+      context: ANY  # or SIDECAR_INBOUND, SIDECAR_OUTBOUND, GATEWAY
+    patch:
+      operation: MERGE
+      value:
+        per_connection_buffer_limit_bytes: 32768  # 32 KiB
+  - applyTo: NETWORK_FILTER
+    match:
+      context: GATEWAY
+      listener:
+        filterChain:
+          filter:
+            name: "envoy.filters.network.http_connection_manager"
+    patch:
+      operation: MERGE
+      value:
+        name: "envoy.filters.network.http_connection_manager"
+        typed_config:
+          "@type": "type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager"
+          http2_protocol_options:
+            max_concurrent_streams: 100
+            initial_stream_window_size: 4194304  # 4 MiB
+            initial_connection_window_size: 8388608  # 8 MiB

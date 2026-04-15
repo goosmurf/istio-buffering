@@ -1,0 +1,120 @@
+# Gateway
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-gateway
+  labels:
+    istio-discovery: enabled
+
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: istio-gateway
+  namespace: istio-gateway
+# If you want to test without a LoadBalancer
+#  annotations:
+#    networking.istio.io/service-type: ClusterIP 
+spec:
+  gatewayClassName: istio
+  # infrastructure:
+  #   parametersRef:
+  #     group: ""
+  #     kind: ConfigMap
+  #     name: istio-gateway-options  
+  allowedListeners:
+    namespaces:
+      from: All
+  listeners:
+  - name: tls-listener
+    port: 9999
+    protocol: TLS
+    allowedRoutes:
+      namespaces:
+        from: All
+    tls:
+      mode: Passthrough
+
+---
+
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: istio-gateway-options
+#   namespace: istio-gateway
+# data:
+#   deployment: |
+#     spec:
+#       template:
+#         spec:
+#           containers:
+#           - name: istio-proxy
+#             resources:
+#               requests:
+#                 cpu: 500m
+#                 memory: 2048Mi
+#               limits:
+#                 cpu: 2000m
+#                 memory: 8192Mi
+#   service: |
+#     metadata:
+#       annotations:
+#         #service.beta.kubernetes.io/azure-load-balancer-ipv4: "$ingressIpAddress"
+#         #service.beta.kubernetes.io/azure-load-balancer-tcp-idle-timeout: "15"
+#     spec:
+#       externalTrafficPolicy: Local
+
+
+# Waypoint
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-waypoint
+  labels:
+    istio-discovery: enabled
+---
+
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: istio-waypoint
+  namespace: istio-waypoint
+  labels:
+    istio.io/waypoint-for: service
+spec:
+  gatewayClassName: istio-waypoint
+  # infrastructure:
+  #   parametersRef:
+  #     group: ""
+  #     kind: ConfigMap
+  #     name: istio-waypoint-options
+  listeners:
+  - allowedRoutes:
+      namespaces:
+        from: All
+    name: mesh
+    port: 15008
+    protocol: HBONE
+---
+
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: istio-waypoint-options
+#   namespace: istio-waypoint
+# data:
+#   deployment: |
+#     spec:
+#       template:
+#         spec:
+#           containers:
+#           - name: istio-proxy
+#             resources:
+#               requests:
+#                 cpu: 500m
+#                 memory: 2048Mi
+#               limits:
+#                 cpu: 2000m
+#                 memory: 8192Mi

@@ -1,0 +1,137 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: caddy
+  labels:
+    istio-discovery: enabled
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: caddy-service
+  namespace: caddy
+  labels:
+    istio.io/dataplane-mode: ambient
+    istio.io/ingress-use-waypoint: "true"
+    istio.io/use-waypoint: istio-waypoint
+    istio.io/use-waypoint-namespace: istio-waypoint
+spec:
+  selector:
+    app: caddy-server
+  ports:
+    - protocol: TCP
+      port: 9999
+      targetPort: 443
+  type: ClusterIP
+
+---
+apiVersion: gateway.networking.x-k8s.io/v1alpha1
+kind: XListenerSet
+metadata:
+  name: caddy
+  namespace: caddy
+spec:
+  parentRef:
+    name: istio-gateway
+    namespace: istio-gateway
+    kind: Gateway
+    group: gateway.networking.k8s.io
+  listeners:
+  - name: tls-listener
+    port: 9999
+    protocol: TLS
+    #hostname: caddy.internal
+    tls:
+      mode: Passthrough
+
+---
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TLSRoute
+metadata:
+  name: caddy
+  namespace: caddy
+spec:
+  parentRefs:
+  - name: istio-gateway
+    namespace: istio-gateway
+    sectionName: tls-listener
+  # hostnames:
+  # - caddy.internal
+  rules:
+  - backendRefs:
+    - name: caddy-service
+      port: 9999
+
+---
+# Caddy config creates a self-signed TLS certificate and accepts any hostname
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: caddy-config
+  namespace: caddy
+data:
+  Caddyfile: |
+    :443 {
+        # This force-enables TLS for any connection to port 443
+        tls internal {
+            on_demand
+        }
+    
+        # Crucial: This allows Caddy to serve a cert even if the 
+        # client hits an IP instead of a hostname
+        @fallback {
+            not header_regexp Host .*
+        }
+
+        root * /data
+        file_server
+        header Content-Type "application/octet-stream"
+        log {
+            output stdout
+        }
+    }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: caddy-payload-server
+  namespace: caddy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: caddy-server
+  template:
+    metadata:
+      labels:
+        app: caddy-server
+        istio.io/dataplane-mode: ambient
+    spec:
+      # InitContainer creates a 1GB file
+      initContainers:
+      - name: create-payload
+        image: busybox
+        command: ["sh", "-c", "dd if=/dev/urandom of=/data/testdata.bin bs=1M count=1000"]
+        volumeMounts:
+        - name: data-storage
+          mountPath: /data
+      containers:
+      - name: caddy
+        image: caddy:latest
+        ports:
+        - containerPort: 443
+        volumeMounts:
+        - name: config-volume
+          mountPath: /etc/caddy/Caddyfile
+          subPath: Caddyfile
+        - name: data-storage
+          mountPath: /data
+      volumes:
+      - name: config-volume
+        configMap:
+          name: caddy-config
+      - name: data-storage
+        emptyDir: {}
