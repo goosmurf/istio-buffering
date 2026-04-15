@@ -1,0 +1,131 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: buffer-limits
+  namespace: istio-gateway
+spec:
+  configPatches:
+    - applyTo: LISTENER
+      match:
+        context: ANY
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 32768
+          socket_options:
+            - description: "Set TCP_NOTSENT_LOWAT to 16k to trigger backpressure"
+              level: 6 # IPPROTO_TCP
+              name: 25 # TCP_NOTSENT_LOWAT
+              int_value: 16384
+              state: STATE_LISTENING
+    - applyTo: CLUSTER
+      match:
+        context: ANY
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 32768
+    - applyTo: CLUSTER
+      #match:
+      #  context: ANY
+      match:
+        cluster:
+          portNumber: 15008
+      patch:
+        operation: MERGE
+        value:
+          typed_extension_protocol_options:
+            envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+              "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+              explicit_http_config:
+                http2_protocol_options:
+                  max_concurrent_streams: 100
+                  initial_stream_window_size: 65536
+                  initial_connection_window_size: 1048576
+          http2_protocol_options:
+            initial_stream_window_size: 65536
+            initial_connection_window_size: 1048576
+    - applyTo: NETWORK_FILTER
+      match:
+        context: GATEWAY
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.http_connection_manager"
+      patch:
+        operation: MERGE
+        value:
+          name: "envoy.filters.network.http_connection_manager"
+          typed_config:
+            "@type": "type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager"
+            http2_protocol_options:
+              max_concurrent_streams: 100
+              initial_stream_window_size: 65536
+              initial_connection_window_size: 1048576
+---
+
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: buffer-limits
+  namespace: istio-waypoint
+spec:
+  # targetRefs:
+  #   - kind: Gateway
+  #     name: istio-waypoint
+  #     group: gateway.networking.k8s.io
+  configPatches:
+    - applyTo: LISTENER
+      match:
+        context: ANY
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 32768
+          socket_options:
+            - description: "Set TCP_NOTSENT_LOWAT to 16k to trigger backpressure"
+              level: 6 # IPPROTO_TCP
+              name: 25 # TCP_NOTSENT_LOWAT
+              int_value: 16384
+              state: STATE_LISTENING
+    - applyTo: CLUSTER
+      match:
+        context: ANY
+      patch:
+        operation: MERGE
+        value:
+          per_connection_buffer_limit_bytes: 32768
+    - applyTo: CLUSTER
+      match:
+        context: ANY
+      patch:
+        operation: MERGE
+        value:
+          typed_extension_protocol_options:
+            envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+              "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+              explicit_http_config:
+                http2_protocol_options:
+                  max_concurrent_streams: 100
+                  initial_stream_window_size: 65536
+                  initial_connection_window_size: 1048576
+          http2_protocol_options:
+            initial_stream_window_size: 65536
+            initial_connection_window_size: 1048576
+    - applyTo: NETWORK_FILTER
+      match:
+        context: ANY
+        listener:
+          filterChain:
+            filter:
+              name: "envoy.filters.network.http_connection_manager"
+      patch:
+        operation: MERGE
+        value:
+          name: "envoy.filters.network.http_connection_manager"
+          typed_config:
+            "@type": "type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager"
+            http2_protocol_options:
+              max_concurrent_streams: 100
+              initial_stream_window_size: 65536
+              initial_connection_window_size: 1048576
