@@ -68,7 +68,9 @@ kubectl exec -n caddy $(kubectl get -n caddy pod -o jsonpath='{.items[0].metadat
 ```
 
 In Wireshark, in the `Statistics -> Conversations` view, select `TCP` and we see this:
-<img width="1604" height="574" alt="image" src="https://github.com/user-attachments/assets/705dd401-3707-430d-bd1b-d9ca7a2b9caf" />
+
+<img width="1604" height="572" alt="image" src="https://github.com/user-attachments/assets/9d7981b7-47c5-47dc-aa53-67233817b9a6" />
+
 
 
 ### Envoy stats
