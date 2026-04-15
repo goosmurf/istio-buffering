@@ -18,7 +18,7 @@ The files in this repo provide a simplified reproduction of the problem, standin
 
 The files in this repo should be run on a fresh K8s cluster to avoid conflicts with existing configuration.
 
-### Standing up
+### Setup
 
 ```
 # Install Istio Helm charts, apply Gateway and Waypoint configuration; note:
@@ -40,7 +40,8 @@ kubectl apply -f caddy-service.yaml
 kubectl apply -f envoyfilters.yaml
 ```
 
-### Reproducing and observing the issue
+
+### Simulating a slow client
 
 We can use `curl` to simulate a slow client:
 
@@ -53,6 +54,8 @@ curl -vk https://$gatewayIP:9999/testdata.bin --output /dev/null --limit-rate 12
 Note the `--limit-rate`, and `--http1.1`.
 
 `curl` defaults to HTTP2 and HTTP2's built-in flow control avoids this issue. However, our real world Application doesn't speak HTTP - it has its own protocol that relies on TCP flow control. Using `--http1.1` with Caddy simulates this behaviour since HTTP/1.1 also has no flow control.
+
+`reset.sh` is provided to restart the Gateway, Waypoint, and Prometheus pods between runs. It was observed that once the data is buffered, stopping curl does not seem to result in `envoy_server_memory_allocated` dropping. Restarting Prometheus is a quick way to clear its DB between runs.
 
 ### Observations
 
@@ -92,4 +95,3 @@ The graph also displays `envoy_server_memory_allocated` because when we looked a
 We went looking for where the data might be buffered to see what we should tune but these buffers don't sum to anywhere near 70MB. We suspect whatever is holding the buffered data is either not represented by available metrics, or we couldn't find the right metric (although we could not find any metric with a value that was 10s of MBs).
 
 <img width="1655" height="765" alt="image" src="https://github.com/user-attachments/assets/ebe26da1-aedf-4267-9201-b0a59171c0e1" />
-
