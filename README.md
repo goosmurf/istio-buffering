@@ -95,3 +95,11 @@ The graph also displays `envoy_server_memory_allocated` because when we looked a
 We went looking for where the data might be buffered to see what we should tune but these buffers don't sum to anywhere near 70MB. We suspect whatever is holding the buffered data is either not represented by available metrics, or we couldn't find the right metric (although we could not find any metric with a value that was 10s of MBs).
 
 <img width="1655" height="765" alt="image" src="https://github.com/user-attachments/assets/ebe26da1-aedf-4267-9201-b0a59171c0e1" />
+
+## Things we have tried, thoughts
+
+We tried to apply various limits in `envoyfilters-many-limits-but-doesnt-help.yaml` but this did not have any meaningful impact, unless we set the values so small that performance is universally awful. However it's possible that we missed a setting, or aren't setting things in the right way. We copied some of these settings from https://github.com/istio/istio/issues/33416
+
+We wonder if our issue is related to https://github.com/istio/istio/issues/56312 but that issue was something lacking in detail.
+
+Our suspicion is that the data is being buffered in the HTTP/2 connection used by HBONE, but we could not find any way to change the buffers/window sizing for the connect_originate clusters.
