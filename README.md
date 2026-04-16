@@ -1,5 +1,7 @@
 # istio-buffering
 
+This has been reported as https://github.com/istio/istio/issues/59887
+
 ## Architecture
 
 Our Istio setup is crudely: `Client <--> Gateway <--> Waypoint <--> Application`
