@@ -1,0 +1,22 @@
+profile: ambient
+image: yunacr.azurecr.io/pilot-1.29.1:meshconfig
+global:
+  imagePullPolicy: Always
+pilot:
+  env:
+    ENABLE_INGRESS_WAYPOINT_ROUTING: true
+    PILOT_ENABLE_ALPHA_GATEWAY_API: true
+    #PILOT_HTTP10: true
+meshConfig:
+  defaultConfig:
+    proxyStatsMatcher:
+      inclusionRegexps:
+        - ".*"
+  discoverySelectors:
+  - matchLabels:
+      istio-discovery: enabled
+  hboneIdleTimeout: 15s
+  hboneInitialStreamWindowSize: 65535                                                                                                      
+  hboneInitialConnectionWindowSize: 262140                                                                                                 
+  hboneNoPoolingInitialStreamWindowSize: 65535                                                                                             
+  hboneNoPoolingInitialConnectionWindowSize: 262140                                                                                        

@@ -1,0 +1,6 @@
+meshConfig:
+  defaultConfig:
+    proxyMetadata:
+      HTTP2_STREAM_WINDOW_SIZE: "65535"
+      HTTP2_CONNECTION_WINDOW_SIZE: "262140"
+      HTTP2_FRAME_SIZE: "16384"
