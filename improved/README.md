@@ -26,7 +26,7 @@ The values of 64k and 256k feel like they make sense for us given our K8s cluste
 
 ### 2. `per_connection_buffer_limit_bytes`
 
-This and the next item are both set via `envoyfilters.yaml`.
+This and the next item are both set via [envoyfilters.yaml](envoyfilters.yaml).
 
 Set to 32k.
 
